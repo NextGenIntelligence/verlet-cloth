@@ -2,6 +2,7 @@ package sim.glutil
 
 import javax.media.opengl.GL
 import java.nio.FloatBuffer
+import sim.glutil.Vector3DUtil._
 
 abstract class GLBuffer(gl: GL, buffer: Int, bufferType: Int) {
 
@@ -16,21 +17,13 @@ abstract class GLBuffer(gl: GL, buffer: Int, bufferType: Int) {
     deleted = true
   }
 
-  def isDeleted: Boolean = {
-    deleted
-  }
+  def isDeleted: Boolean = deleted
 
-  def size: Int = {
-    numElements
-  }
+  def size: Int = numElements
 
-  def bind() = {
-    glx.glBindBuffer(bufferType, buffer)
-  }
+  def bind() = glx.glBindBuffer(bufferType, buffer)
 
-  def unbind() = {
-    glx.glBindBuffer(bufferType, 0)
-  }
+  def unbind() = glx.glBindBuffer(bufferType, 0)
 
 }
 
@@ -48,10 +41,10 @@ class GLFloatBuffer(gl: GL, buffer: Int, bufferType: Int) extends GLBuffer(gl, b
 
   private val BYTES_PER_FLOAT = 4
 
-  def bufferData(data: Traversable[Triple[Float, Float, Float]], dynamic: Boolean) = {
+  def bufferVertices(data: Traversable[Vector3D], dynamic: Boolean) = {
     if (isDeleted) throw new IllegalStateException("Buffer is deleted")
 
-    val flatData = data.flatMap(x => List(x._1, x._2, x._3)).toArray
+    val flatData = data.flatMap(v => List(v.x, v.y, v.z)).toArray
     val dataBuffer = FloatBuffer.wrap(flatData)
 
     bind()

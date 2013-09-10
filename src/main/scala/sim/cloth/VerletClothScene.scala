@@ -6,7 +6,6 @@ import com.jogamp.opengl.util.PMVMatrix
 import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
 import sim.glutil.{GLAttributeData, GLBuffer, GLFloatBuffer}
 import sim.glutil.GLUtil._
-import sim.glutil.Vector3DUtil._
 
 class VerletClothScene extends GLEventListener {
 
@@ -19,9 +18,11 @@ class VerletClothScene extends GLEventListener {
   private var posAttribute: GLAttributeData = null
   private var vertexBuffer: GLFloatBuffer = null
 
-  private var theta = 0.0f
-  private var s = 0.0f
-  private var c = 0.0f
+  private val cloth = new ClothMesh(250.0f, 250.0f)
+
+  private var screenWidth = 1
+  private var screenHeight = 1
+  private var lastTime = 0l
 
   def init(drawable: GLAutoDrawable) = {
     val gl = drawable.getGL
@@ -42,6 +43,8 @@ class VerletClothScene extends GLEventListener {
 
     posAttribute = gl.getAttributeData(shaderProgram, "pos")
     vertexBuffer = GLBuffer.createFloatBuffer(gl, GL.GL_ARRAY_BUFFER)
+
+    gl.getGL2.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2GL3.GL_LINE)
   }
 
   def dispose(drawable: GLAutoDrawable) = {
@@ -53,32 +56,34 @@ class VerletClothScene extends GLEventListener {
     render(drawable)
   }
 
-  def reshape(drawable: GLAutoDrawable, x: Int, y: Int, width: Int, height: Int) = {}
+  def reshape(drawable: GLAutoDrawable, x: Int, y: Int, width: Int, height: Int) = {
+    screenWidth = width
+    screenHeight = height
+  }
 
   def update(drawable: GLAutoDrawable) = {
-    theta += 0.01f
-    s = Math.sin(theta).toFloat
-    c = Math.cos(theta).toFloat
+    val currentTime = System.currentTimeMillis()
+
+    if (currentTime - lastTime >= 15) {
+      lastTime = currentTime
+      cloth.step(15.0f/1000.0f)
+
+      // Update vertices.
+      vertexBuffer.bufferVertices(cloth.getTris, dynamic = true)
+    }
 
     // Set up model-view-projection matrix.
     mvp.glMatrixMode(GLMatrixFunc.GL_MODELVIEW)
     mvp.glLoadIdentity()
     mvp.glTranslatef(0.0f, 0.0f, -4.0f)
-    mvp.gluLookAt(0.0f, 2.0f, 0.0f,   // Eye
-      0.0f, -2.0f, -4.0f,             // Target
-      0.0f, 1.0f, 0.0f)               // Up vector
+    mvp.gluLookAt(0.0f, 200.0f, -500.0f,  // Eye
+      0.0f, 0.0f, 0.0f,                   // Target
+      0.0f, 1.0f, 0.0f)                   // Up vector
     mvp.glMatrixMode(GLMatrixFunc.GL_PROJECTION)
     mvp.glLoadIdentity()
-    mvp.gluPerspective(45.0f, 1.0f, 0.1f, 1000.0f)
+    mvp.gluPerspective(45.0f, screenWidth.toFloat / screenHeight, 0.1f, 10000.0f)
 
     shaderState.uniform(drawable.getGL.getGL2ES2, mvpUniform)
-
-    // Update vertices.
-    val vertices = Array((-c,  -c, 0.0f),
-      (0.0f, c, 0.0f),
-      (s, -s, 0.0f))
-
-    vertexBuffer.bufferData(vertices, dynamic = true)
   }
 
   def render(drawable: GLAutoDrawable) = {

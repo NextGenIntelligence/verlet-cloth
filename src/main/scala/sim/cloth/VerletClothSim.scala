@@ -20,7 +20,7 @@ object VerletClothSim extends WindowAdapter {
     glCanvas.addGLEventListener(new VerletClothScene())
 
     val frame = new Frame("Testing... 1, 2, 3")
-    frame.setSize(300, 300)
+    frame.setSize(600, 600)
     frame.addWindowListener(this)
     frame.add(glCanvas)
     frame.setVisible(true)
@@ -30,6 +30,7 @@ object VerletClothSim extends WindowAdapter {
   }
 
   override def windowClosing(e: event.WindowEvent) {
+    animator.stop()
     sys.exit(0)
   }
 }
