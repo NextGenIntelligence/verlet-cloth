@@ -4,10 +4,11 @@ import javax.media.opengl._
 import javax.media.opengl.fixedfunc.GLMatrixFunc
 import com.jogamp.opengl.util.PMVMatrix
 import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
-import sim.glutil.{GLAttributeData, GLBuffer, GLFloatBuffer}
-import sim.glutil.GLUtil._
+import sim.glutil.SimpleGLArrayDataServer
 
 class VerletClothScene extends GLEventListener {
+
+  private val cloth = new ClothMesh(250.0f, 250.0f)
 
   private val shaderProgram = new ShaderProgram()
   private val shaderState = new ShaderState()
@@ -15,14 +16,12 @@ class VerletClothScene extends GLEventListener {
   private val mvp = new PMVMatrix()
   private val mvpUniform = new GLUniformData("mvp", 4, 4, mvp.glGetPMvMatrixf)
 
-  private var posAttribute: GLAttributeData = null
-  private var vertexBuffer: GLFloatBuffer = null
-
-  private val cloth = new ClothMesh(250.0f, 250.0f)
+  private val vertices = SimpleGLArrayDataServer("vertex", cloth)
 
   private var screenWidth = 1
   private var screenHeight = 1
   private var lastTime = 0l
+  private val initialTime = System.currentTimeMillis()
 
   def init(drawable: GLAutoDrawable) = {
     val gl = drawable.getGL
@@ -40,15 +39,13 @@ class VerletClothScene extends GLEventListener {
 
     shaderState.attachShaderProgram(glx, shaderProgram, true)
     shaderState.ownUniform(mvpUniform)
-
-    posAttribute = gl.getAttributeData(shaderProgram, "pos")
-    vertexBuffer = GLBuffer.createFloatBuffer(gl, GL.GL_ARRAY_BUFFER)
+    shaderState.ownAttribute(vertices, true)
 
     gl.getGL2.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2GL3.GL_LINE)
   }
 
   def dispose(drawable: GLAutoDrawable) = {
-    vertexBuffer.delete()
+    vertices.destroy(drawable.getGL)
   }
 
   def display(drawable: GLAutoDrawable) = {
@@ -62,6 +59,7 @@ class VerletClothScene extends GLEventListener {
   }
 
   def update(drawable: GLAutoDrawable) = {
+    val gl = drawable.getGL
     val currentTime = System.currentTimeMillis()
 
     if (currentTime - lastTime >= 15) {
@@ -69,7 +67,8 @@ class VerletClothScene extends GLEventListener {
       cloth.step(15.0f/1000.0f)
 
       // Update vertices.
-      vertexBuffer.bufferVertices(cloth.getTris, dynamic = true)
+      cloth.bufferData(gl, vertices)
+      vertices.enableBuffer(gl, false)
     }
 
     // Set up model-view-projection matrix.
@@ -79,6 +78,7 @@ class VerletClothScene extends GLEventListener {
     mvp.gluLookAt(0.0f, 200.0f, -500.0f,  // Eye
       0.0f, 0.0f, 0.0f,                   // Target
       0.0f, 1.0f, 0.0f)                   // Up vector
+    mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)
     mvp.glMatrixMode(GLMatrixFunc.GL_PROJECTION)
     mvp.glLoadIdentity()
     mvp.gluPerspective(45.0f, screenWidth.toFloat / screenHeight, 0.1f, 10000.0f)
@@ -92,6 +92,10 @@ class VerletClothScene extends GLEventListener {
     glx.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
     glx.glClear(GL.GL_COLOR_BUFFER_BIT)
 
-    posAttribute.setVerticesFromBuffer(vertexBuffer)
+    //posAttribute.setVerticesFromBuffer(vertexBuffer)
+
+    vertices.enableBuffer(glx, true)
+    glx.glDrawArrays(GL.GL_TRIANGLES, 0, vertices.getElementCount)
+    vertices.enableBuffer(glx, false)
   }
 }

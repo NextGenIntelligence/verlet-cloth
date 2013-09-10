@@ -3,10 +3,8 @@ package sim.cloth
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import com.jogamp.opengl.util.FPSAnimator
 import javax.media.opengl.awt.GLCanvas
-import javax.swing.{WindowConstants, JFrame}
 import java.awt.{event, Frame}
 import java.awt.event.WindowAdapter
-import scala.io.Source
 
 object VerletClothSim extends WindowAdapter {
 
