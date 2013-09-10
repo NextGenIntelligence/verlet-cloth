@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="SBT: org.jogamp.gluegen:gluegen-rt:2.0-rc11">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.jogamp.gluegen/gluegen-rt/jars/gluegen-rt-2.0-rc11.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.jogamp.gluegen/gluegen-rt/docs/gluegen-rt-2.0-rc11-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.jogamp.gluegen/gluegen-rt/srcs/gluegen-rt-2.0-rc11-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
