@@ -1,11 +1,10 @@
 package sim.cloth
 
 import sim.glutil.Vector3DUtil._
-import sim.glutil.GLBufferable
 import com.jogamp.opengl.util.GLArrayDataServer
 import javax.media.opengl.GL
 
-class ClothMesh(width: Float, length: Float) extends GLBufferable {
+class ClothMesh(width: Float, length: Float) {
 
   val widthFaces = 48
 
@@ -46,15 +45,14 @@ class ClothMesh(width: Float, length: Float) extends GLBufferable {
     particles.foreach(_.foreach(_.verletIntegrate(dt)))
   }
 
-  def comps: Int = 3
-
-  def dataType: Int = GL.GL_FLOAT
-
-  def normalized: Boolean = false
-
-  def sizeRequired: Int = widthVertices * lengthVertices * 6 // 3 vtx per tri, 2 tris per quad.
-
-  def vboBufferUsage: Int = GL.GL_DYNAMIC_DRAW
+  def createBuffer(name: String): GLArrayDataServer = {
+    GLArrayDataServer.createGLSL(name,
+      3, // 3 vector components per vertex.
+      GL.GL_FLOAT,
+      false, // Not normalized.
+      widthVertices * lengthVertices * 6, // 3 vtx per tri, 2 tris per quad.
+      GL.GL_DYNAMIC_DRAW)
+  }
 
   def bufferData(gl: GL, array: GLArrayDataServer) {
     array.seal(gl, false)

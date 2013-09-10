@@ -4,7 +4,6 @@ import javax.media.opengl._
 import javax.media.opengl.fixedfunc.GLMatrixFunc
 import com.jogamp.opengl.util.PMVMatrix
 import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
-import sim.glutil.SimpleGLArrayDataServer
 
 class VerletClothScene extends GLEventListener {
 
@@ -16,7 +15,7 @@ class VerletClothScene extends GLEventListener {
   private val mvp = new PMVMatrix()
   private val mvpUniform = new GLUniformData("mvp", 4, 4, mvp.glGetPMvMatrixf)
 
-  private val vertices = SimpleGLArrayDataServer("vertex", cloth)
+  private val vertices = cloth.createBuffer("vertex")
 
   private var screenWidth = 1
   private var screenHeight = 1
@@ -91,8 +90,6 @@ class VerletClothScene extends GLEventListener {
 
     glx.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
     glx.glClear(GL.GL_COLOR_BUFFER_BIT)
-
-    //posAttribute.setVerticesFromBuffer(vertexBuffer)
 
     vertices.enableBuffer(glx, true)
     glx.glDrawArrays(GL.GL_TRIANGLES, 0, vertices.getElementCount)
