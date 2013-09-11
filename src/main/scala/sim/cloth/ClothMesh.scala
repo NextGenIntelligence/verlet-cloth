@@ -24,21 +24,15 @@ class ClothMesh(width: Float, length: Float) {
       }).toArray
     }).toArray
 
-  val horizontalSprings =
-    (0 until widthFaces).flatMap(x => {
-      (0 until lengthVertices).map(y => {
-        new Spring(particles(x)(y), particles(x + 1)(y))
-      })
-    }).toVector
+  val verticalSprings = particles.flatMap(column => {
+    column.sliding(2).map(p => new Spring(p(0), p(1)))
+  })
 
-  val verticalSprings =
-    (0 until widthVertices).flatMap(x => {
-      (0 until lengthFaces).map(y => {
-        new Spring(particles(x)(y), particles(x)(y + 1))
-      })
-    }).toVector
+  val horizontalSprings = particles.view.transpose.flatMap(row => {
+    row.sliding(2).map(p => new Spring(p(0), p(1)))
+  })
 
-  val allSprings = horizontalSprings ++ verticalSprings
+  val allSprings = verticalSprings ++ horizontalSprings
 
   def step(dt: Float) = {
     allSprings.foreach(_.apply())
