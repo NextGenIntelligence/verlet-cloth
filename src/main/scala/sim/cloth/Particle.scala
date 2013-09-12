@@ -6,13 +6,16 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
 
   private var previousPosition = position
   private var acceleration = Vector3D.ZERO
+  private var forces = Vector3D.ZERO
 
-  private val mass = 1.0f
-  private val damping = 20.0f
-  private val gravity = -392.0f
+  private val mass = 0.5f
 
-  private def applyForce(force: Vector3D) {
-    acceleration += force / mass
+  def applyForce(force: Vector3D) = {
+    forces += force
+  }
+
+  def applyGravity(gravity: Float) = {
+    forces += (0.0f, mass * gravity, 0.0f)
   }
 
   def getMass: Float = mass
@@ -25,18 +28,16 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
     position = newPosition
   }
 
+  def getVelocity(dt: Float): Vector3D = {
+    (position - previousPosition) / dt
+  }
+
   def verletIntegrate(dt: Float) = {
     if (!sticky) {
-      val gravityForce = (0.0f, mass * gravity, 0.0f)
-      applyForce(gravityForce)
-
-      val velocity = position - previousPosition
-      acceleration -= velocity * damping / mass
-      val nextPosition = position + velocity + (acceleration * 0.5f * dt * dt)
-
+      val nextPosition = position + (position - previousPosition) + forces * ((dt * dt) / mass)
       previousPosition = position
       position = nextPosition
-      acceleration = Vector3D.ZERO
+      forces = Vector3D.ZERO
     }
   }
 

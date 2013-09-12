@@ -6,6 +6,20 @@ import javax.media.opengl.GL
 
 class ClothMesh(width: Float, length: Float) {
 
+  val GRAVITY = -200.0f
+
+  val STRUCTURAL_STIFFNESS = 500.0f
+
+  val STRUCTURAL_DAMPING = 0.5f
+
+  val SHEAR_STIFFNESS = 500.0f
+
+  val SHEAR_DAMPING = 0.5f
+
+  val BEND_STIFFNESS = 500.0f
+
+  val BEND_DAMPING = 0.5f
+
   val widthFaces = 48
 
   val lengthFaces = 48
@@ -25,18 +39,37 @@ class ClothMesh(width: Float, length: Float) {
     }).toArray
 
   val verticalSprings = particles.flatMap(column => {
-    column.sliding(2).map(p => new Spring(p(0), p(1)))
+    column.sliding(2).map(p => new SpringDamper(p(0), p(1), STRUCTURAL_STIFFNESS, STRUCTURAL_DAMPING))
+  })
+
+  val verticalBendSprings = particles.flatMap(column => {
+    column.sliding(3).map(p => new SpringDamper(p(0), p(2), BEND_STIFFNESS, BEND_DAMPING))
   })
 
   val horizontalSprings = particles.view.transpose.flatMap(row => {
-    row.sliding(2).map(p => new Spring(p(0), p(1)))
+    row.sliding(2).map(p => new SpringDamper(p(0), p(1), STRUCTURAL_STIFFNESS, STRUCTURAL_DAMPING))
   })
 
-  val allSprings = verticalSprings ++ horizontalSprings
+  val horizontalBendSprings = particles.view.transpose.flatMap(row => {
+    row.sliding(3).map(p => new SpringDamper(p(0), p(2), BEND_STIFFNESS, BEND_DAMPING))
+  })
+
+  val diagonalSprings = particles.sliding(2).flatMap(columns => {
+    columns(0).zip(columns(1)).sliding(2).flatMap(particles => {
+      Array(new SpringDamper(particles(0)._1, particles(1)._2, SHEAR_STIFFNESS, SHEAR_DAMPING),
+        new SpringDamper(particles(0)._2, particles(1)._1, SHEAR_STIFFNESS, SHEAR_DAMPING))
+    })
+  })
+
+  val allSprings = (verticalSprings ++ verticalBendSprings ++
+    horizontalSprings ++ horizontalBendSprings ++ diagonalSprings).toVector
 
   def step(dt: Float) = {
-    allSprings.foreach(_.apply())
-    particles.foreach(_.foreach(_.verletIntegrate(dt)))
+    allSprings.foreach(_(dt))
+
+    val particlesFlat = particles.flatten
+    particlesFlat.foreach(_.applyGravity(GRAVITY))
+    particlesFlat.foreach(_.verletIntegrate(dt))
   }
 
   def createBuffer(name: String): GLArrayDataServer = {

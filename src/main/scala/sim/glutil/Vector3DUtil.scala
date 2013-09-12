@@ -44,6 +44,10 @@ object Vector3DUtil {
       Math.sqrt(u dot u).toFloat
     }
 
+    def normalize: Vector3D = {
+      u / u.length
+    }
+
   }
 
   object Vector3D {
@@ -59,6 +63,10 @@ object Vector3DUtil {
   implicit class RichFloat(k: Float) {
 
     def *(u: Triple[Float, Float, Float]): Triple[Float, Float, Float] = {
+      u * k
+    }
+
+    def *(u: Vector3D): Triple[Float, Float, Float] = {
       u * k
     }
 

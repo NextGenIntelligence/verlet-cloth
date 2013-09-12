@@ -77,7 +77,7 @@ class VerletClothScene extends GLEventListener {
     mvp.gluLookAt(0.0f, 200.0f, -500.0f,  // Eye
       0.0f, 0.0f, 0.0f,                   // Target
       0.0f, 1.0f, 0.0f)                   // Up vector
-    mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)
+    //mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)
     mvp.glMatrixMode(GLMatrixFunc.GL_PROJECTION)
     mvp.glLoadIdentity()
     mvp.gluPerspective(45.0f, screenWidth.toFloat / screenHeight, 0.1f, 10000.0f)
