@@ -7,7 +7,7 @@ import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
 
 class VerletClothScene extends GLEventListener {
 
-  private val cloth = new ClothMesh(250.0f, 250.0f)
+  private val cloth = new ClothMesh(50.0f, 50.0f)
 
   private val shaderProgram = new ShaderProgram()
   private val shaderState = new ShaderState()
@@ -74,7 +74,7 @@ class VerletClothScene extends GLEventListener {
     mvp.glMatrixMode(GLMatrixFunc.GL_MODELVIEW)
     mvp.glLoadIdentity()
     mvp.glTranslatef(0.0f, 0.0f, -4.0f)
-    mvp.gluLookAt(0.0f, 200.0f, -500.0f,  // Eye
+    mvp.gluLookAt(0.0f, 40.0f, -80.0f,  // Eye
       0.0f, 0.0f, 0.0f,                   // Target
       0.0f, 1.0f, 0.0f)                   // Up vector
     //mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)

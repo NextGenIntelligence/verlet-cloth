@@ -8,7 +8,7 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
   private var acceleration = Vector3D.ZERO
   private var forces = Vector3D.ZERO
 
-  private val mass = 0.5f
+  private val mass = .1f
 
   def applyForce(force: Vector3D) = {
     forces += force

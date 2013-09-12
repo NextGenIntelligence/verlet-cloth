@@ -6,17 +6,17 @@ import javax.media.opengl.GL
 
 class ClothMesh(width: Float, length: Float) {
 
-  val GRAVITY = -200.0f
+  val GRAVITY = -980.7f
 
-  val STRUCTURAL_STIFFNESS = 500.0f
+  val STRUCTURAL_STIFFNESS = 1.0f
 
   val STRUCTURAL_DAMPING = 0.5f
 
-  val SHEAR_STIFFNESS = 500.0f
+  val SHEAR_STIFFNESS = 2.0f
 
   val SHEAR_DAMPING = 0.5f
 
-  val BEND_STIFFNESS = 500.0f
+  val BEND_STIFFNESS = 2.0f
 
   val BEND_DAMPING = 0.5f
 
@@ -32,7 +32,7 @@ class ClothMesh(width: Float, length: Float) {
     (0 until widthVertices).map(x => {
       (0 until lengthVertices).map(y => {
         val position = ((x.toFloat / widthFaces) * width - width / 2.0f,
-          100.0f,
+          10.0f,
           (y.toFloat / lengthFaces) * length - length / 2.0f)
         new Particle(position, (x == widthFaces || x == 0) && (y == lengthFaces || y == 0))
       }).toArray
@@ -68,7 +68,7 @@ class ClothMesh(width: Float, length: Float) {
     allSprings.foreach(_(dt))
 
     val particlesFlat = particles.flatten
-    particlesFlat.foreach(_.applyGravity(GRAVITY))
+    particlesFlat.foreach(_.applyGravity(GRAVITY * dt * dt))
     particlesFlat.foreach(_.verletIntegrate(dt))
   }
 

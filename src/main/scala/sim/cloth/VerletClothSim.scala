@@ -23,6 +23,7 @@ object VerletClothSim extends WindowAdapter {
     frame.add(glCanvas)
     frame.setVisible(true)
 
+    animator.setUpdateFPSFrames(60, System.out)
     animator.add(glCanvas)
     animator.start()
   }
