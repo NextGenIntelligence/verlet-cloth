@@ -48,6 +48,10 @@ object Vector3DUtil {
       u / u.length
     }
 
+    override def toString: String = {
+      f"<$x,$y,$z>"
+    }
+
   }
 
   object Vector3D {

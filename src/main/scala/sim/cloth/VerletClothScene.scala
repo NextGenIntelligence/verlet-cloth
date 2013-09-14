@@ -4,10 +4,12 @@ import javax.media.opengl._
 import javax.media.opengl.fixedfunc.GLMatrixFunc
 import com.jogamp.opengl.util.PMVMatrix
 import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
+import com.jogamp.opengl.util.gl2.GLUT
 
 class VerletClothScene extends GLEventListener {
 
-  private val cloth = new ClothMesh(50.0f, 50.0f)
+  private val sphere = new Sphere(10.0f)
+  private val cloth = new ClothMesh(50.0f, 50.0f, Array(sphere))
 
   private val shaderProgram = new ShaderProgram()
   private val shaderState = new ShaderState()
@@ -74,7 +76,7 @@ class VerletClothScene extends GLEventListener {
     mvp.glMatrixMode(GLMatrixFunc.GL_MODELVIEW)
     mvp.glLoadIdentity()
     mvp.glTranslatef(0.0f, 0.0f, -4.0f)
-    mvp.gluLookAt(0.0f, 40.0f, -80.0f,  // Eye
+    mvp.gluLookAt(0.0f, 40.0f, 80.0f,  // Eye
       0.0f, 0.0f, 0.0f,                   // Target
       0.0f, 1.0f, 0.0f)                   // Up vector
     //mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)
@@ -94,5 +96,7 @@ class VerletClothScene extends GLEventListener {
     vertices.enableBuffer(glx, true)
     glx.glDrawArrays(GL.GL_TRIANGLES, 0, vertices.getElementCount)
     vertices.enableBuffer(glx, false)
+
+    //new GLUT().glutSolidSphere(sphere.radius, 20, 20)
   }
 }

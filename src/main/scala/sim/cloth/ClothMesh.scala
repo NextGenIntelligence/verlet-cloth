@@ -4,7 +4,7 @@ import sim.glutil.Vector3DUtil._
 import com.jogamp.opengl.util.GLArrayDataServer
 import javax.media.opengl.GL
 
-class ClothMesh(width: Float, length: Float) {
+class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
 
   val GRAVITY = -980.7f
 
@@ -12,13 +12,13 @@ class ClothMesh(width: Float, length: Float) {
 
   val STRUCTURAL_DAMPING = 0.5f
 
-  val SHEAR_STIFFNESS = 2.0f
+  val SHEAR_STIFFNESS = 1.5f
 
-  val SHEAR_DAMPING = 0.5f
+  val SHEAR_DAMPING = 0.75f
 
   val BEND_STIFFNESS = 2.0f
 
-  val BEND_DAMPING = 0.5f
+  val BEND_DAMPING = 1.0f
 
   val widthFaces = 48
 
@@ -32,9 +32,9 @@ class ClothMesh(width: Float, length: Float) {
     (0 until widthVertices).map(x => {
       (0 until lengthVertices).map(y => {
         val position = ((x.toFloat / widthFaces) * width - width / 2.0f,
-          10.0f,
+          15.0f,
           (y.toFloat / lengthFaces) * length - length / 2.0f)
-        new Particle(position, (x == widthFaces || x == 0) && (y == lengthFaces || y == 0))
+        new Particle(position, y == 0)
       }).toArray
     }).toArray
 
@@ -70,6 +70,7 @@ class ClothMesh(width: Float, length: Float) {
     val particlesFlat = particles.flatten
     particlesFlat.foreach(_.applyGravity(GRAVITY * dt * dt))
     particlesFlat.foreach(_.verletIntegrate(dt))
+    collisionObjects.foreach(obj => particlesFlat.foreach(_.solveCollision(obj)))
   }
 
   def createBuffer(name: String): GLArrayDataServer = {

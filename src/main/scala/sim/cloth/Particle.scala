@@ -5,10 +5,9 @@ import sim.glutil.Vector3DUtil._
 class Particle(private var position: Vector3D, sticky: Boolean) {
 
   private var previousPosition = position
-  private var acceleration = Vector3D.ZERO
   private var forces = Vector3D.ZERO
 
-  private val mass = .1f
+  private val mass = 0.1f
 
   def applyForce(force: Vector3D) = {
     forces += force
@@ -16,6 +15,12 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
 
   def applyGravity(gravity: Float) = {
     forces += (0.0f, mass * gravity, 0.0f)
+  }
+
+  def solveCollision(sphere: Sphere) = {
+    if (sphere.hitTest(position)) {
+      setPosition(sphere.surfacePoint(position, previousPosition))
+    }
   }
 
   def getMass: Float = mass
