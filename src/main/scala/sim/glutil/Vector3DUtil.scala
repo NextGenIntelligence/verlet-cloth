@@ -20,6 +20,10 @@ object Vector3DUtil {
       u.x * v.x + u.y * v.y + u.z * v.z
     }
 
+    def cross(v: Vector3D): Triple[Float, Float, Float] = {
+      (u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x)
+    }
+
     def *(k: Float): Triple[Float, Float, Float] = {
       (u.x * k, u.y * k, u.z * k)
     }
