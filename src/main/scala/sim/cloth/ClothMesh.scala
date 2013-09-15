@@ -30,7 +30,7 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
 
   val lengthVertices = lengthFaces + 1
 
-  var buffer: Option[ClothMeshBuffer] = None
+  private var buffer: Option[ClothMeshBuffer] = None
 
   val particles =
     (0 until widthVertices).map(x => {
@@ -77,8 +77,40 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
     collisionObjects.foreach(obj => particlesFlat.foreach(_.solveCollision(obj)))
   }
 
+  private def index(x: Int, y: Int): Int = {
+    x * widthVertices + y
+  }
+
   def createBuffer(gl: GL, attributeName: String, shaderProgram: ShaderProgram) = {
-    buffer = Some(ClothMeshBuffer(gl, attributeName, shaderProgram))
+    val buf = ClothMeshBuffer(gl, attributeName, shaderProgram)
+
+    (0 until widthFaces).foreach(x => {
+      (0 until lengthFaces).foreach(y => {
+        val p1 = index(x, y)
+        val p2 = index(x + 1, y)
+        val p3 = index(x + 1, y + 1)
+        val p4 = index(x, y + 1)
+
+        buf.elementBuffer.put(p1)
+        buf.elementBuffer.put(p2)
+        buf.elementBuffer.put(p3)
+        buf.elementBuffer.put(p3)
+        buf.elementBuffer.put(p4)
+        buf.elementBuffer.put(p1)
+      })
+    })
+
+    buf.elementBuffer.rewind()
+
+    // Go ahead and buffer the elements array ahead of time.
+    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, buf.elementBufferName)
+    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER,
+      buf.elementBufferSize * Buffers.SIZEOF_INT,
+      buf.elementBuffer,
+      GL.GL_STATIC_DRAW)
+    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
+
+    buffer = Some(buf)
   }
 
   def destroyBuffer(gl: GL) = {
@@ -92,29 +124,24 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
   }
 
   def bufferData(gl: GL) {
-    val array = (0 until widthFaces).flatMap(x => {
-      val y = (0 until lengthFaces).flatMap(y => {
-        val p1 = particles(x)(y).getPosition
-        val p2 = particles(x + 1)(y).getPosition
-        val p3 = particles(x + 1)(y + 1).getPosition
-        val p4 = particles(x)(y + 1).getPosition
-
-        Array(p1.x, p1.y, p1.z,
-          p2.x, p2.y, p2.z,
-          p3.x, p3.y, p3.z,
-          p3.x, p3.y, p3.z,
-          p4.x, p4.y, p4.z,
-          p1.x, p1.y, p1.z)
-      }).toArray
-      y
-    }).toArray
-
     buffer match {
       case Some(buf) => {
+        (0 until widthVertices).foreach(x => {
+          (0 until lengthVertices).foreach(y => {
+            val p = particles(x)(y).getPosition
+
+            buf.vertexBuffer.put(p.x)
+            buf.vertexBuffer.put(p.y)
+            buf.vertexBuffer.put(p.z)
+          })
+        })
+
+        buf.vertexBuffer.rewind()
+
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.vertexBufferName)
         gl.glBufferData(GL.GL_ARRAY_BUFFER,
-          array.size * Buffers.SIZEOF_FLOAT,
-          Buffers.newDirectFloatBuffer(array),
+          buf.vertexBufferSize * Buffers.SIZEOF_FLOAT,
+          buf.vertexBuffer,
           GL.GL_DYNAMIC_DRAW)
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
       }
@@ -128,6 +155,7 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
     buffer match {
       case Some(buf) => {
         glx.glEnableVertexAttribArray(buf.attributeLocation)
+
         glx.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.vertexBufferName)
         glx.glVertexAttribPointer(buf.attributeLocation,
           3,
@@ -135,30 +163,45 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
           false,
           0,
           0)
-        glx.glDrawArrays(GL.GL_TRIANGLES, 0, widthFaces * lengthFaces * 2 /* 2 tris per quad */ * 3 /* 3 vertices per tri */)
+
+        glx.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, buf.elementBufferName)
+        glx.glDrawElements(GL.GL_TRIANGLES,
+          buf.elementBufferSize,
+          GL.GL_UNSIGNED_INT,
+          0)
+
         glx.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        glx.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
         glx.glDisableVertexAttribArray(buf.attributeLocation)
       }
       case _ => // Do nothing!
     }
   }
 
-  class ClothMeshBuffer(val attributeLocation: Int, val vertexBufferName: Int) {
+  private class ClothMeshBuffer(val attributeLocation: Int, val vertexBufferName: Int, val elementBufferName: Int) {
+
+    val vertexBufferSize = widthVertices * lengthVertices * 3 /* 3 comps per vector */
+
+    val vertexBuffer = Buffers.newDirectFloatBuffer(vertexBufferSize)
+
+    val elementBufferSize = widthFaces * lengthFaces * 2 /* 2 tris per quad */ * 3 /* 3 vertices per tri */
+
+    val elementBuffer = Buffers.newDirectIntBuffer(elementBufferSize)
 
     def destroy(gl: GL) = {
-      gl.glDeleteBuffers(1, Array(vertexBufferName), 0)
+      gl.glDeleteBuffers(2, Array(vertexBufferName, elementBufferName), 0)
     }
 
   }
 
-  object ClothMeshBuffer {
+  private object ClothMeshBuffer {
 
     def apply(gl: GL, attributeName: String, shaderProgram: ShaderProgram) = {
       val attributeLocation = gl.getGL2ES2.glGetAttribLocation(shaderProgram.program, "vertex")
-      val out = Array(-1)
-      gl.getGL2ES2.glGenBuffers(1, out, 0)
+      val out = Array(-1, -1)
+      gl.getGL2ES2.glGenBuffers(2, out, 0)
 
-      new ClothMeshBuffer(attributeLocation, out(0))
+      new ClothMeshBuffer(attributeLocation, out(0), out(1))
     }
 
   }

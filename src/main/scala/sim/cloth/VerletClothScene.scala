@@ -93,6 +93,6 @@ class VerletClothScene extends GLEventListener {
 
     cloth.drawBuffer(glx)
 
-    new GLUT().glutSolidSphere(sphere.radius, 20, 20)
+    //new GLUT().glutSolidSphere(sphere.radius, 20, 20)
   }
 }
