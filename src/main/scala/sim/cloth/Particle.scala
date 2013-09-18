@@ -19,7 +19,9 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
 
   def solveCollision(sphere: Sphere) = {
     if (sphere.hitTest(position)) {
-      setPosition(sphere.surfacePoint(position, previousPosition))
+      val surfacePoint = sphere.surfacePoint(position)
+      applyForce(surfacePoint - position)
+      setPosition(surfacePoint)
     }
   }
 

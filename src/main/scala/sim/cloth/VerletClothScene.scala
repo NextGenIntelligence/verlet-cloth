@@ -1,7 +1,7 @@
 package sim.cloth
 
 import javax.media.opengl._
-import javax.media.opengl.fixedfunc.GLMatrixFunc
+import javax.media.opengl.fixedfunc.{GLLightingFunc, GLMatrixFunc}
 import com.jogamp.opengl.util.PMVMatrix
 import com.jogamp.opengl.util.glsl.{ShaderCode, ShaderProgram, ShaderState}
 import com.jogamp.opengl.util.gl2.GLUT
@@ -41,7 +41,10 @@ class VerletClothScene extends GLEventListener {
 
     cloth.createBuffer(gl, "vertex", shaderProgram)
 
-    gl.getGL2.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2GL3.GL_LINE)
+    gl.glEnable(GL.GL_DEPTH_TEST)
+    gl.glEnable(GLLightingFunc.GL_LIGHTING)
+    gl.glEnable(GLLightingFunc.GL_LIGHT0)
+    //gl.getGL2.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2GL3.GL_LINE)
   }
 
   def dispose(drawable: GLAutoDrawable) = {
@@ -89,7 +92,7 @@ class VerletClothScene extends GLEventListener {
     val glx = drawable.getGL.getGL2ES2
 
     glx.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
-    glx.glClear(GL.GL_COLOR_BUFFER_BIT)
+    glx.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
     cloth.drawBuffer(glx)
 

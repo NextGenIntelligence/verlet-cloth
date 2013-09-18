@@ -1,7 +1,6 @@
 package sim.cloth
 
 import sim.glutil.Vector3DUtil._
-import com.jogamp.opengl.util.GLArrayDataServer
 import javax.media.opengl.GL
 import com.jogamp.common.nio.Buffers
 import com.jogamp.opengl.util.glsl.ShaderProgram
@@ -81,6 +80,42 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
     x * widthVertices + y
   }
 
+  /**
+   * Grossly inefficient but readable way of calculating vertex normals.
+   * @param x x-coordinate of particle
+   * @param y y-coordinate of particle
+   * @return the vertex normal for the particle
+   */
+  private def normal(x: Int, y: Int): Vector3D = {
+    val pt = particles(x)(y)
+
+    val (n, s) = y match {
+      case y if y == 0 => {
+        val a = particles(x)(y + 1).getPosition - pt.getPosition
+        (a, -a)
+      }
+      case y if y == lengthFaces => {
+        val b = particles(x)(y - 1).getPosition - pt.getPosition
+        (-b, b)
+      }
+      case _ => (particles(x)(y + 1).getPosition - pt.getPosition, particles(x)(y - 1).getPosition - pt.getPosition)
+    }
+
+    val (e, w) = x match {
+      case x if x == 0 => {
+        val a = particles(x + 1)(y).getPosition - pt.getPosition
+        (a, -a)
+      }
+      case x if x == widthFaces => {
+        val b = particles(x - 1)(y).getPosition - pt.getPosition
+        (-b, b)
+      }
+      case _ => (particles(x + 1)(y).getPosition - pt.getPosition, particles(x - 1)(y).getPosition - pt.getPosition)
+    }
+
+    ((s cross e) + (n cross w)).normalize
+  }
+
   def createBuffer(gl: GL, attributeName: String, shaderProgram: ShaderProgram) = {
     val buf = ClothMeshBuffer(gl, attributeName, shaderProgram)
 
@@ -138,11 +173,30 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
 
         buf.vertexBuffer.rewind()
 
+        (0 until widthVertices).foreach(x => {
+          (0 until lengthVertices).foreach(y => {
+            val n = normal(x, y)
+
+            buf.normalBuffer.put(n.x)
+            buf.normalBuffer.put(n.y)
+            buf.normalBuffer.put(n.z)
+          })
+        })
+
+        buf.normalBuffer.rewind()
+
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.vertexBufferName)
         gl.glBufferData(GL.GL_ARRAY_BUFFER,
           buf.vertexBufferSize * Buffers.SIZEOF_FLOAT,
           buf.vertexBuffer,
           GL.GL_DYNAMIC_DRAW)
+
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.normalBufferName)
+        gl.glBufferData(GL.GL_ARRAY_BUFFER,
+          buf.vertexBufferSize * Buffers.SIZEOF_FLOAT,
+          buf.normalBuffer,
+          GL.GL_DYNAMIC_DRAW)
+
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
       }
       case _ => // Do nothing!
@@ -154,10 +208,19 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
 
     buffer match {
       case Some(buf) => {
-        glx.glEnableVertexAttribArray(buf.attributeLocation)
+        glx.glEnableVertexAttribArray(buf.vertexAttributeLocation)
+        glx.glEnableVertexAttribArray(buf.normalAttributeLocation)
 
         glx.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.vertexBufferName)
-        glx.glVertexAttribPointer(buf.attributeLocation,
+        glx.glVertexAttribPointer(buf.vertexAttributeLocation,
+          3,
+          GL.GL_FLOAT,
+          false,
+          0,
+          0)
+
+        glx.glBindBuffer(GL.GL_ARRAY_BUFFER, buf.normalBufferName)
+        glx.glVertexAttribPointer(buf.normalAttributeLocation,
           3,
           GL.GL_FLOAT,
           false,
@@ -172,24 +235,31 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
 
         glx.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
         glx.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
-        glx.glDisableVertexAttribArray(buf.attributeLocation)
+        glx.glDisableVertexAttribArray(buf.vertexAttributeLocation)
+        glx.glDisableVertexAttribArray(buf.normalAttributeLocation)
       }
       case _ => // Do nothing!
     }
   }
 
-  private class ClothMeshBuffer(val attributeLocation: Int, val vertexBufferName: Int, val elementBufferName: Int) {
+  private class ClothMeshBuffer(val vertexAttributeLocation: Int,
+                                val vertexBufferName: Int,
+                                val normalAttributeLocation: Int,
+                                val normalBufferName: Int,
+                                val elementBufferName: Int) {
 
     val vertexBufferSize = widthVertices * lengthVertices * 3 /* 3 comps per vector */
 
     val vertexBuffer = Buffers.newDirectFloatBuffer(vertexBufferSize)
+
+    val normalBuffer = Buffers.newDirectFloatBuffer(vertexBufferSize)
 
     val elementBufferSize = widthFaces * lengthFaces * 2 /* 2 tris per quad */ * 3 /* 3 vertices per tri */
 
     val elementBuffer = Buffers.newDirectIntBuffer(elementBufferSize)
 
     def destroy(gl: GL) = {
-      gl.glDeleteBuffers(2, Array(vertexBufferName, elementBufferName), 0)
+      gl.glDeleteBuffers(3, Array(vertexBufferName, normalBufferName, elementBufferName), 0)
     }
 
   }
@@ -197,11 +267,13 @@ class ClothMesh(width: Float, length: Float, collisionObjects: Array[Sphere]) {
   private object ClothMeshBuffer {
 
     def apply(gl: GL, attributeName: String, shaderProgram: ShaderProgram) = {
-      val attributeLocation = gl.getGL2ES2.glGetAttribLocation(shaderProgram.program, "vertex")
-      val out = Array(-1, -1)
-      gl.getGL2ES2.glGenBuffers(2, out, 0)
+      val vertexAttributeLocation = gl.getGL2ES2.glGetAttribLocation(shaderProgram.program, "vertex")
+      val normalAttributeLocation = gl.getGL2ES2.glGetAttribLocation(shaderProgram.program, "normal")
 
-      new ClothMeshBuffer(attributeLocation, out(0), out(1))
+      val out = Array(-1, -1, -1)
+      gl.getGL2ES2.glGenBuffers(3, out, 0)
+
+      new ClothMeshBuffer(vertexAttributeLocation, out(0), normalAttributeLocation, out(1), out(2))
     }
 
   }
