@@ -41,7 +41,8 @@ class Particle(private var position: Vector3D, sticky: Boolean) {
 
   def verletIntegrate(dt: Float) = {
     if (!sticky) {
-      val nextPosition = position + (position - previousPosition) + forces * ((dt * dt) / mass)
+      // See <http://www.cs.cmu.edu/afs/cs/academic/class/15462-s13/www/lec_slides/Jakobsen.pdf>.
+      val nextPosition = position + (position - previousPosition) + (forces / mass * dt * dt)
       previousPosition = position
       position = nextPosition
       forces = Vector3D.ZERO

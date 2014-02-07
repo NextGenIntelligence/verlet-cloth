@@ -20,16 +20,15 @@ class VerletClothScene extends GLEventListener {
   private var screenWidth = 1
   private var screenHeight = 1
   private var lastTime = 0l
-  private val initialTime = System.currentTimeMillis()
 
   def init(drawable: GLAutoDrawable) = {
     val gl = drawable.getGL
     val glx = gl.getGL2ES2
 
-    val vertexShaderCode = ShaderCode.create(gl.getGL2ES2, GL2ES2.GL_VERTEX_SHADER, 1, getClass, Array("vertex.glsl"), false)
+    val vertexShaderCode = ShaderCode.create(gl.getGL2ES2, GL2ES2.GL_VERTEX_SHADER, 1, getClass, Array("src/main/resources/sim/cloth/vertex.glsl"), false)
     shaderProgram.add(vertexShaderCode)
 
-    val fragmentShaderCode = ShaderCode.create(gl.getGL2ES2, GL2ES2.GL_FRAGMENT_SHADER, 1, getClass, Array("frag.glsl"), false)
+    val fragmentShaderCode = ShaderCode.create(gl.getGL2ES2, GL2ES2.GL_FRAGMENT_SHADER, 1, getClass, Array("src/main/resources/sim/cloth/frag.glsl"), false)
     shaderProgram.add(fragmentShaderCode)
 
     shaderProgram.link(glx, System.err)
@@ -77,7 +76,7 @@ class VerletClothScene extends GLEventListener {
     mvp.glMatrixMode(GLMatrixFunc.GL_MODELVIEW)
     mvp.glLoadIdentity()
     mvp.glTranslatef(0.0f, 0.0f, -4.0f)
-    mvp.gluLookAt(0.0f, 40.0f, 80.0f,  // Eye
+    mvp.gluLookAt(60.0f, 40.0f, 60.0f,     // Eye
       0.0f, 0.0f, 0.0f,                   // Target
       0.0f, 1.0f, 0.0f)                   // Up vector
     //mvp.glRotatef(((currentTime - initialTime) * 360.0f) / 8000.0f, 0, 1, 0)

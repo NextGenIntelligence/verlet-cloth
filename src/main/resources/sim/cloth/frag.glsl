@@ -2,12 +2,12 @@
 
 varying vec3 N;
 varying vec3 v;
-varying vec3 frag_color;
+varying vec4 frag_color;
 
 void main(void) {
-  vec3 L = normalize(gl_LightSource[0].position.xyz - v);
-  vec4 Idiff = gl_FrontLightProduct[0].diffuse * max(dot(N,L), 0.0);
-  Idiff = clamp(Idiff, 0.0, 1.0);
+  vec3 L = vec3(0.0, -1.0, 0.0);
+  float diff = max(dot(N,L), 0.0) + 0.1;
+  diff = clamp(diff, 0.0, 1.0);
 
-  gl_FragColor = Idiff;
+  gl_FragColor = diff * vec4(frag_color);
 }
