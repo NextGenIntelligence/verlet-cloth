@@ -26,12 +26,12 @@ class SpringDamper(p1: Particle, p2: Particle, stiffness: Float, damping: Float)
     totalForce * diffPositionUnit
   }
 
-  private def getForces(dt: Float): Vector3D = {
-    getForces(p1.getPosition, p1.getVelocity(dt), p2.getPosition, p2.getVelocity(dt))
+  private def getForces: Vector3D = {
+    getForces(p1.getPosition, p1.getVelocity, p2.getPosition, p2.getVelocity)
   }
 
   def apply(dt: Float) = {
-    val forces = getForces(dt)
+    val forces = getForces
     p1.applyForce(forces)
     p2.applyForce(-forces)
   }
